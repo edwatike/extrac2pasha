@@ -1,4 +1,5 @@
 import json
+import os
 import re
 from typing import Dict, Optional, Any
 from datetime import datetime
@@ -11,6 +12,9 @@ from fake_useragent import UserAgent
 import requests
 from stem import Signal
 from stem.control import Controller
+
+# Путь к директории скрипта
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def detect_protection(html: str) -> str:
     """
@@ -50,10 +54,16 @@ def load_strategies() -> Dict:
     Returns:
         Dict: Словарь со стратегиями
     """
+    strategies_path = os.path.join(SCRIPT_DIR, 'strategies.json')
     try:
-        with open('strategies.json', 'r', encoding='utf-8') as f:
+        with open(strategies_path, 'r', encoding='utf-8') as f:
             strategies = json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
+            print(f"Загружено {len(strategies)} стратегий из {strategies_path}")
+    except FileNotFoundError:
+        print(f"Файл стратегий не найден: {strategies_path}")
+        strategies = []
+    except json.JSONDecodeError as e:
+        print(f"Ошибка при чтении файла стратегий: {e}")
         strategies = []
     
     log_event({
@@ -70,10 +80,11 @@ def save_strategy(strategy: Dict) -> None:
     Args:
         strategy: Словарь с данными стратегии
     """
+    strategies_path = os.path.join(SCRIPT_DIR, 'strategies.json')
     strategies = load_strategies()
     strategies.append(strategy)
     
-    with open('strategies.json', 'w', encoding='utf-8') as f:
+    with open(strategies_path, 'w', encoding='utf-8') as f:
         json.dump(strategies, f, ensure_ascii=False, indent=2)
     
     log_event({
